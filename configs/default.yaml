@@ -1,0 +1,84 @@
+# Model Architecture
+model:
+  hidden_dim: 256
+  num_layers: 4
+  num_groups: 16
+  dropout: 0.2
+  atom_feature_dim: 155
+  edge_feature_dim: 6
+  pooling: attention
+  use_edge_features: true
+
+# Hierarchical Components
+hierarchical:
+  enable_group_level: true
+  group_detection_method: motif
+  group_embedding_dim: 128
+  group_message_passing_layers: 2
+  fusion_method: attention
+
+# Curriculum Learning
+curriculum:
+  enable: true
+  start_epoch: 10
+  warmup_epochs: 5
+  difficulty_metric: scaffold_complexity
+  weight_schedule: linear
+  max_weight: 3.0
+  min_weight: 0.5
+
+# Training
+training:
+  num_epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  gradient_clip: 1.0
+  early_stopping_patience: 15
+  val_check_interval: 1
+
+# Learning Rate Schedule
+lr_scheduler:
+  type: cosine
+  min_lr: 0.00001
+  warmup_epochs: 5
+
+# Data
+data:
+  dataset: tox21
+  split_type: scaffold
+  train_ratio: 0.8
+  val_ratio: 0.1
+  test_ratio: 0.1
+  num_workers: 4
+  prefetch_factor: 2
+
+# Optimization
+optimizer:
+  type: adam
+  betas: [0.9, 0.999]
+  eps: 0.00000001
+  amsgrad: false
+
+# Regularization
+regularization:
+  label_smoothing: 0.0
+  mixup_alpha: 0.0
+  dropout: 0.2
+
+# Logging
+logging:
+  log_interval: 10
+  checkpoint_dir: models
+  results_dir: results
+  save_top_k: 3
+  mlflow_tracking: true
+  mlflow_experiment: hierarchical_mp_toxicity
+
+# Reproducibility
+seed: 42
+
+# Hardware
+device: cuda
+mixed_precision: true
+compile_model: false
