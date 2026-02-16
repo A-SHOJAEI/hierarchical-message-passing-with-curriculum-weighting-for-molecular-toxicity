@@ -196,41 +196,51 @@ def load_tox21_dataset() -> Tuple[List[str], np.ndarray]:
 
     Returns:
         Tuple of (smiles_list, labels)
+
+    Raises:
+        RuntimeError: If DeepChem is not available or Tox21 fails to load.
     """
+    import os
+    smoke_test = os.environ.get("SMOKE_TEST", "0") == "1"
+
+    if smoke_test:
+        logger.info("SMOKE_TEST: using minimal molecule set for quick validation")
+        return generate_synthetic_data(num_samples=50)
+
     logger.info("Loading Tox21 dataset...")
 
     if not DEEPCHEM_AVAILABLE:
-        logger.warning("DeepChem not available. Generating synthetic data for demonstration...")
+        logger.warning(
+            "DeepChem not available. Falling back to synthetic data for training. "
+            "For real Tox21 data, install with: pip install deepchem>=2.7.0"
+        )
         return generate_synthetic_data(num_samples=1000)
 
-    try:
-        # Load using DeepChem
-        tasks, datasets, transformers = dc.molnet.load_tox21(featurizer='Raw')
-        train_dataset, valid_dataset, test_dataset = datasets
+    # Load real Tox21 from DeepChem (auto-downloads ~10MB)
+    tasks, datasets, transformers = dc.molnet.load_tox21(featurizer='Raw')
+    train_dataset, valid_dataset, test_dataset = datasets
 
-        # Combine all splits
-        all_smiles = []
-        all_labels = []
+    # Combine all splits
+    all_smiles = []
+    all_labels = []
 
-        for dataset in [train_dataset, valid_dataset, test_dataset]:
-            smiles = dataset.ids
-            # Take the first task for binary classification
-            labels = dataset.y[:, 0]
+    for dataset in [train_dataset, valid_dataset, test_dataset]:
+        smiles = dataset.ids
+        # Take the first task for binary classification
+        labels = dataset.y[:, 0]
 
-            # Filter out molecules with missing labels
-            valid_mask = ~np.isnan(labels)
-            all_smiles.extend(smiles[valid_mask])
-            all_labels.append(labels[valid_mask])
+        # Filter out molecules with missing labels
+        valid_mask = ~np.isnan(labels)
+        all_smiles.extend(smiles[valid_mask])
+        all_labels.append(labels[valid_mask])
 
-        all_labels = np.concatenate(all_labels)
+    all_labels = np.concatenate(all_labels)
 
-        logger.info(f"Loaded {len(all_smiles)} molecules from Tox21 dataset")
-        return all_smiles, all_labels
+    if len(all_smiles) == 0:
+        raise RuntimeError("Tox21 dataset loaded but contains no valid molecules")
 
-    except Exception as e:
-        logger.error(f"Error loading Tox21 dataset: {e}")
-        logger.warning("Generating synthetic data for demonstration...")
-        return generate_synthetic_data(num_samples=1000)
+    logger.info(f"Loaded {len(all_smiles)} molecules from Tox21 dataset")
+    return all_smiles, all_labels
 
 
 def generate_synthetic_data(num_samples: int = 1000) -> Tuple[List[str], np.ndarray]:

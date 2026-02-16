@@ -44,6 +44,10 @@ dev = [
     "pytest-cov>=4.1.0",
     "mlflow>=2.8.0",
 ]
+# Optional: For real Tox21 dataset (will use synthetic data if not available)
+data = [
+    "deepchem>=2.7.0",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
