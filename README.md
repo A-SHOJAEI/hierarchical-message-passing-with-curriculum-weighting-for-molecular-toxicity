@@ -52,13 +52,39 @@ The model employs a hierarchical message passing architecture:
 4. **Curriculum Weighting**: Adaptive sample weighting based on scaffold complexity
 5. **Multi-scale Fusion**: Attention-based combination of atom and group representations
 
-## Key Results
+## Training Results
 
-| Model | ROC-AUC | Scaffold Split AUC | Complex Molecule AUC |
-|-------|---------|-------------------|---------------------|
-| Baseline GNN | 0.812 | 0.765 | 0.724 |
-| + Hierarchical MP | 0.841 | 0.788 | 0.761 |
-| + Curriculum (Full) | 0.857 | 0.803 | 0.784 |
+> **Note:** The results below were obtained by training on **synthetic Tox21 molecular data** (randomly generated molecular graphs), not the real Tox21 benchmark. Performance metrics reflect this limitation and should not be compared directly to published Tox21 benchmark results.
+
+### Epoch Progression
+
+| Epoch | Train Loss | Val Loss | Val ROC-AUC | Val Accuracy |
+|------:|------------|----------|-------------|--------------|
+| 1     | 0.0745     | 0.6743   | 0.4991      | 0.65         |
+| 5     | 0.0708     | 0.6532   | 0.5001      | 0.65         |
+| 10    | 0.0344     | 0.6533   | 0.5045      | 0.65         |
+| 15    | 0.0395     | 0.6541   | 0.5027      | 0.65         |
+| 20    | 0.0402     | 0.6568   | 0.5118      | 0.65         |
+| 25    | 0.0400     | 0.6586   | 0.4967      | 0.65         |
+| 27    | 0.0397     | 0.6622   | 0.5126      | 0.65         |
+
+Training was stopped early at epoch 27 (patience of 15 epochs without improvement on validation loss).
+
+### Best Validation Metrics
+
+| Metric         | Value  | Epoch |
+|----------------|--------|------:|
+| Best Val Loss  | 0.6510 | 21    |
+| Best Val AUC   | 0.5148 | 12    |
+| Val Accuracy   | 0.65   | --    |
+| Val PR-AUC     | 0.3761 | 12    |
+
+### Training Observations
+
+- **Curriculum learning effect:** At epoch 10 (when curriculum weighting activated), train loss dropped sharply from ~0.070 to ~0.034, indicating the difficulty-aware sample weighting changed the loss landscape substantially.
+- **Validation plateau:** Despite the train loss reduction, validation loss remained flat around 0.65--0.66, and validation ROC-AUC hovered near 0.50 (random-chance level). The model did not generalize beyond the training set.
+- **Class imbalance:** The model predicted the majority class (negative/non-toxic) for all validation samples across all epochs (precision, recall, and F1 all equal to 0.0 on the positive class). The 65/35 class split (195 negatives, 105 positives) was not overcome.
+- **Hardware:** NVIDIA RTX 3090 (24 GB), mixed-precision training enabled.
 
 Run `python scripts/train.py` to reproduce these results.
 
@@ -84,14 +110,29 @@ tests/             # Unit tests
 
 ## Configuration
 
-Key hyperparameters in `configs/default.yaml`:
+Training configuration used for the results above (from `configs/default.yaml`):
 
-- `hidden_dim`: 256 (embedding dimension)
-- `num_layers`: 4 (GNN depth)
-- `num_groups`: 16 (functional group vocabulary size)
-- `curriculum_start_epoch`: 10 (when to enable curriculum)
-- `learning_rate`: 0.001
-- `batch_size`: 32
+| Parameter | Value |
+|-----------|-------|
+| Hidden dim | 256 |
+| GNN layers | 4 |
+| Functional group vocab size | 16 |
+| Group embedding dim | 128 |
+| Group MP layers | 2 |
+| Fusion method | Attention |
+| Dropout | 0.2 |
+| Optimizer | Adam (lr=0.001, weight_decay=1e-5) |
+| LR scheduler | Cosine (min_lr=1e-5, warmup=5 epochs) |
+| Batch size | 32 |
+| Max epochs | 100 |
+| Early stopping patience | 15 |
+| Curriculum start epoch | 10 |
+| Curriculum warmup | 5 epochs |
+| Difficulty metric | Scaffold complexity |
+| Weight schedule | Linear (min=0.5, max=3.0) |
+| Data split | Scaffold (80/10/10) |
+| Mixed precision | Enabled |
+| Seed | 42 |
 
 ## Requirements
 
