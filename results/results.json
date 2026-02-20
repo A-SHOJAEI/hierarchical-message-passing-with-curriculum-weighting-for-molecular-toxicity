@@ -1,0 +1,43 @@
+{
+  "project": "Hierarchical Message Passing with Curriculum Weighting for Molecular Toxicity",
+  "dataset": "Tox21 (synthetic molecular data)",
+  "model": {
+    "hidden_dim": 256,
+    "num_layers": 4,
+    "num_groups": 16,
+    "group_embedding_dim": 128,
+    "group_mp_layers": 2,
+    "fusion_method": "attention",
+    "dropout": 0.2
+  },
+  "training": {
+    "total_epochs_trained": 28,
+    "max_epochs": 100,
+    "early_stopping_patience": 15,
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "batch_size": 32,
+    "curriculum_start_epoch": 10,
+    "seed": 42,
+    "mixed_precision": true
+  },
+  "best_metrics": {
+    "best_val_loss": 0.6510,
+    "best_val_loss_epoch": 21,
+    "best_val_auc": 0.5148,
+    "best_val_auc_epoch": 12,
+    "best_val_pr_auc": 0.3761,
+    "val_accuracy": 0.65
+  },
+  "final_metrics": {
+    "final_train_loss": 0.0397,
+    "final_val_loss": 0.6622,
+    "final_train_auc": 0.5126,
+    "final_val_auc": 0.5000
+  },
+  "training_observations": {
+    "curriculum_effect": "At epoch 10, train loss dropped sharply from ~0.070 to ~0.034 when curriculum weighting activated",
+    "class_imbalance": "Model predicted majority class for all validation samples (precision/recall/F1 = 0.0 on positive class)",
+    "class_distribution": "65% negative, 35% positive"
+  }
+}
